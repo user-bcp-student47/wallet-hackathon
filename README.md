@@ -1,142 +1,75 @@
-# CrewAI para equipos
+# Wallet Onboarding Demo
 
-Los agentes parten con instrucciones básicas. Sigue [Mejora tu agente](MEJORA_TU_AGENTE.md) para completar el ejercicio y consultar resultados desde el portal.
+Demo de onboarding de wallet para personas de 18 a 21 años en Perú. Valida un flujo guiado de 4 pasos (celular, OTP simulado, datos personales y documento) contra el mock KYC, y mide por separado la duración del flujo, la revisión KYC y la activación.
 
-Base de trabajo del Lab 4, S1. Lee una funcionalidad del backlog mediante MCP Projects
-y genera una solución Quarkus 3.x y Angular 17 con seis agentes de CrewAI, o siete cuando el equipo activa Datos y persistencia.
-Cada agente tiene su definición y la tarea en un archivo propio.
+- **Alcance:** [alcance_onboarding.md](docs/alcance/alcance_onboarding.md)
+- **Contrato del mock:** [openapi.json](docs/openapi.json)
+- **Cambio OpenSpec:** `openspec/changes/wallet-onboarding-demo`
 
-## Editar tu agente
+```
+ Angular (frontend/, ng serve)  --/api-->  Quarkus (backend/, mvn quarkus:dev)  -->  mock KYC
+```
 
-Los agentes son básicos: un objetivo breve, una responsabilidad por rol y una salida concreta.
-Usa un requisito pequeño, por ejemplo crear una tarea con título.
-Ajusta ese ejemplo al requisito del backlog de tu equipo.
-Testing propone un caso válido y otro inválido; Security revisa entradas y secretos;
-Chapter compara las entregas con el requisito. Los prompts conservan los formatos
-que necesita el flujo para guardar código y revisar resultados.
+Solo se usan datos de prueba (`TEST`). No se envían SMS reales ni se activan operaciones financieras.
 
-Cada participante edita el archivo de su rol:
+## Requisitos
 
-- `agents/architect.py`
-- `agents/backend.py`
-- `agents/frontend.py`
-- `agents/testing.py`
-- `agents/security.py`
-- `agents/chapter.py`
+- JDK 21 y Maven 3.9+
+- Node.js y Angular CLI (`npm i -g @angular/cli`)
 
-El orden es `architect → backend → frontend → testing → security → chapter`.
-Chapter reemplaza al LT como revisor final. La aprobación humana se conserva entre etapas.
-Consulta [TEAM.md](TEAM.md) para crear el repo de tu equipo y repartir los archivos.
+## Ejecución
 
-## Preparar el entorno
-
-Requiere Python 3.11 a 3.13, Git y acceso a GitHub Copilot.
-Usa Python 3.12 durante el taller y ejecuta los comandos en Bash. En Windows, abre Git Bash.
+En dos terminales:
 
 ```bash
-python -m venv .venv
-if [ -f .venv/Scripts/activate ]; then
-  source .venv/Scripts/activate
-else
-  source .venv/bin/activate
-fi
-python -m pip install -r requirements.txt
-[ -f .env ] || cp .env.example .env
-```
+# 1. Backend (http://localhost:8080)
+cd backend
+mvn quarkus:dev
 
-Si en macOS o Linux tu instalación se llama `python3.12`, úsala para crear el entorno. Una vez activado, ejecuta `python`.
-
-Instala [Copilot CLI](https://github.com/features/copilot/cli), abre `copilot` y ejecuta `/login`.
-El SDK usa esa sesión con `COPILOT_USE_LOGGED_IN_USER=true`.
-El modelo predeterminado es `gpt-6-luna` con esfuerzo `high`. Cada llamada consume uso del plan de Copilot.
-Puedes descargar su runtime antes del taller con `python -m copilot download-runtime`.
-
-## Conectar el backlog
-
-Configura `.env` con el owner y repo del producto de tu equipo, `PROJECTS_MCP_URL`
-y `PROJECTS_MCP_API_KEY`. Estos valores apuntan al servicio MCP del taller.
-El repo del producto contiene el backlog; este repo contiene el código del Crew.
-
-Si usas el MCP local del Lab 4, levántalo en otra terminal desde
-`support/mcp-local` con el script `start-mcp.sh`.
-Ese servicio requiere la imagen `localhost/mcp-github-project-manager:latest`, preparada por el instructor, y Podman o Docker. Si no tienes esa imagen, solicita al instructor un endpoint MCP del taller.
-En macOS o Linux:
-
-```sh
-cd support/mcp-local
-gh auth refresh -s project
-bash start-mcp.sh --owner TU_OWNER --repo TU_PRODUCTO
-```
-
-Mantén esa terminal Bash abierta y ejecuta `python main.py` en otra terminal desde la raíz del repo. La URL de S1 es `http://localhost:8081`.
-
-## Ejecutar el Crew
-
-Desde la raíz de este repo, con el entorno virtual activado:
-
-```sh
-python main.py
-```
-
-Selecciona el proyecto y la funcionalidad. Cada paso ejecuta un mini-Crew de un agente.
-En la aprobación humana puedes usar `s` para aprobar, `r` para reintentar con feedback,
-o `n` para rechazar y detener el flujo. El checkpoint permite retomar los pasos aprobados.
-
-Los artefactos se guardan en `output/`:
-
-- `specs/user_story.md`: especificación del arquitecto.
-- `specs/backend_spec.md` y `specs/frontend_spec.md`: implementaciones.
-- `specs/testing_report.md`: casos, tests y comandos. Los resultados quedan pendientes de ejecución humana.
-- `specs/security_report.md`: hallazgos y verificaciones de seguridad.
-- `specs/chapter_review.md`: revisión final del Chapter.
-- `backend-quarkus/` y `frontend-angular/`: código extraído y configuración de arranque.
-- `.checkpoint.json`: estado local de la ejecución.
-
-## Probar la solución generada
-
-Con Java 17 o superior y Maven instalados, abre una terminal en `output/backend-quarkus`:
-
-```sh
-mvn test
-mvn compile quarkus:dev
-```
-
-Con Node.js 18.19 o superior y npm, abre otra terminal en `output/frontend-angular`:
-
-```sh
+# 2. Frontend (http://localhost:4200); /api se redirige al backend con proxy.conf.json
+cd frontend
 npm install
-npm start
+ng serve
 ```
 
-La API se inicia en `http://localhost:8080` y Angular en `http://localhost:4200`.
-Revisa los comandos adicionales del informe de pruebas y registra sus resultados reales.
+Abre http://localhost:4200.
 
-## Verificar cambios en los agentes
+## Modo demo
 
-```sh
-python tools/verify.py
+El modo demo se activa en el backend con la propiedad `onboarding.demo.enabled`. Con `mvn quarkus:dev` está activo por defecto; en otros perfiles está apagado.
+
+Con el modo demo activo:
+- El formulario muestra un selector de escenario KYC (`APPROVED`, `MANUAL_REVIEW`, `REJECTED`, `UNAVAILABLE`).
+- En `MANUAL_REVIEW` aparecen las acciones para resolver con `ACTIVE` o `REJECTED`.
+- El resumen muestra la duración del flujo, la revisión KYC, la activación, la mediana frente a la referencia de 3 minutos y permite exportar los eventos en JSON.
+
+Con el modo demo apagado, el backend usa el escenario `APPROVED` y responde 403 a la resolución manual, al resumen y a los eventos.
+
+Para forzarlo por variable de entorno: `ONBOARDING_DEMO_ENABLED=true` o `false`.
+
+## OTP simulado
+
+El OTP se valida en el frontend contra el código fijo `123456`, sin límite de intentos. No pasa por el backend.
+
+## Cambiar de grupo del mock
+
+El backend usa por defecto el grupo 5. Para cambiarlo:
+
+```bash
+# PowerShell
+$env:ONBOARDING_MOCK_BASE_URL = "https://bcp-wallet-mock.yefri.workers.dev/groups/3"
+mvn quarkus:dev
 ```
 
-Los checks recorren los seis roles, verifican artefactos, contexto y reanudación.
-Sustituyen las llamadas al modelo y a MCP para ejecutarse sin credenciales.
-La ejecución real de Copilot y MCP requiere el entorno del taller.
+También se puede editar `onboarding.mock.base-url` en `backend/src/main/resources/application.properties`.
 
-Consulta [SOURCE.md](SOURCE.md) para ver el origen de esta copia.
+## Reiniciar los datos de la demo
 
-## Equipo de siete (solo CrewAI)
+Las corridas y eventos se guardan en H2 en `backend/data/`. No hay endpoint de limpieza: para empezar de cero, detén el backend y borra la carpeta `backend/data/`.
 
-El grupo de siete añade un responsable de **Datos y persistencia**, que edita
-únicamente `agents/data.py` y entrega su propio PR. Los equipos de seis mantienen
-sus seis roles. En `team.json`, solo el equipo de siete añade `"data": "usuario-real"`
-dentro de `roles`, con un usuario distinto de los otros responsables.
+## Pruebas
 
-Antes de iniciar un flujo nuevo, el líder del equipo de siete configura
-`CREWAI_INCLUDE_DATA=true` en su `.env`. El orden será Arquitectura → Datos y
-persistencia → Backend → Frontend → Pruebas → Seguridad → Chapter. Cada etapa
-mantiene aprobación, rechazo y reintento humanos. Datos produce `output/specs/data_spec.md`
-y propuestas SQL en `output/db/`; no ejecuta migraciones. Backend usa ese contrato
-y Chapter lo revisa. Los participantes mejoran las instrucciones iniciales de su agente.
-
-Por defecto la variable es `false`. Un checkpoint de seis etapas no se reutiliza
-en el flujo de siete ni viceversa: conserva la carpeta `output/` con otro nombre
-antes de cambiar el modo. No borres evidencia previa para cambiar de flujo.
+```bash
+cd backend && mvn verify
+cd frontend && ng test --watch=false
+```
